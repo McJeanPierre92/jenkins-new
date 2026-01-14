@@ -7,26 +7,16 @@ pipeline {
 
     stages {
         stage('Instalar dependencias') {
-            agent {
-                docker {
-                    image 'node:22-slim'
-                    reuseNode true
-                }
-            }
             steps {
-                sh 'npm install'
+                // Ejecutamos npm install dentro de un contenedor para evitar problemas de librerías en el host
+                sh 'docker run --rm -v "${WORKSPACE}":/usr/src/app -w /usr/src/app node:22-slim npm install'
             }
         }
 
         stage('Ejecutar tests') {
-            agent {
-                docker {
-                    image 'node:22-slim'
-                    reuseNode true
-                }
-            }
             steps {
-                sh 'npm test'
+                // Ejecutamos los tests dentro del contenedor
+                sh 'docker run --rm -v "${WORKSPACE}":/usr/src/app -w /usr/src/app node:22-slim npm test'
             }
         }
 
@@ -47,4 +37,5 @@ pipeline {
         }
     }
 }
+
 
