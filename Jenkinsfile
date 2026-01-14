@@ -34,8 +34,17 @@ pipeline {
             }
             steps {
                 sh '''
-                    docker stop hola-mundo-node || true
-                    docker rm hola-mundo-node || true
+                    # Forzar la eliminación del contenedor por nombre si existe
+                    docker rm -f hola-mundo-node || true
+
+                    # Identificar y eliminar CUALQUIER contenedor que esté usando el puerto 3000
+                    CONTAINER_ID=$(docker ps -q --filter "publish=3000")
+                    if [ ! -z "$CONTAINER_ID" ]; then
+                        echo "Deteniendo contenedor existente en puerto 3000: $CONTAINER_ID"
+                        docker rm -f $CONTAINER_ID
+                    fi
+
+                    # Ejecutar el nuevo contenedor
                     docker run -d --name hola-mundo-node -p 3000:3000 hola-mundo-node:latest
                 '''
             }
