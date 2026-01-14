@@ -2,51 +2,43 @@ pipeline {
     agent any
 
     tools {
-        dockerTool "Docker" // Asegúrate de que este nombre coincida con el configurado en Jenkins
+        nodejs "Node"
+        dockerTool "Docker"
     }
 
     stages {
         stage('Instalar dependencias') {
             steps {
-                script {
-                    def dockerBin = "${tool name: 'Docker', type: 'dockerTool'}/bin/docker"
-                    sh "${dockerBin} run --rm -v \"${WORKSPACE}\":/usr/src/app -w /usr/src/app node:22-slim npm install"
-                }
+                sh 'npm install'
             }
         }
 
         stage('Ejecutar tests') {
             steps {
-                script {
-                    def dockerBin = "${tool name: 'Docker', type: 'dockerTool'}/bin/docker"
-                    sh "${dockerBin} run --rm -v \"${WORKSPACE}\":/usr/src/app -w /usr/src/app node:22-slim npm test"
-                }
+                sh 'npm test'
             }
         }
 
         stage('Construir Imagen Docker') {
+            when {
+                expression { currentBuild.result == null || currentBuild.result == 'SUCCESS' }
+            }
             steps {
-                script {
-                    def dockerBin = "${tool name: 'Docker', type: 'dockerTool'}/bin/docker"
-                    sh "${dockerBin} build -t hola-mundo-node:latest ."
-                }
+                sh 'docker build -t hola-mundo-node:latest .'
             }
         }
 
         stage('Ejecutar Contenedor Node.js') {
+            when {
+                expression { currentBuild.result == null || currentBuild.result == 'SUCCESS' }
+            }
             steps {
-                script {
-                    def dockerBin = "${tool name: 'Docker', type: 'dockerTool'}/bin/docker"
-                    sh """
-                        ${dockerBin} stop hola-mundo-node || true
-                        ${dockerBin} rm hola-mundo-node || true
-                        ${dockerBin} run -d --name hola-mundo-node -p 3000:3000 hola-mundo-node:latest
-                    """
-                }
+                sh '''
+                    docker stop hola-mundo-node || true
+                    docker rm hola-mundo-node || true
+                    docker run -d --name hola-mundo-node -p 3000:3000 hola-mundo-node:latest
+                '''
             }
         }
     }
 }
-
-
-
